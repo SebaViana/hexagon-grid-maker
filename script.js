@@ -96,6 +96,31 @@ function displayNeighbors(hex) {
     });
 }
 
+// Function to check if a point is inside a hexagon
+function isPointInHexagon(x, y, hexX, hexY, size) {
+    const points = [];
+    for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 180 * (60 * i - 30);  // Same rotation for pointy-top
+        points.push({
+            x: hexX + size * Math.cos(angle),
+            y: hexY + size * Math.sin(angle)
+        });
+    }
+
+    // Check if the point (x, y) is inside the polygon formed by the hexagon's vertices
+    let inside = false;
+    for (let i = 0, j = 5; i < 6; j = i++) {
+        const xi = points[i].x, yi = points[i].y;
+        const xj = points[j].x, yj = points[j].y;
+
+        const intersect = ((yi > y) !== (yj > y)) &&
+                          (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+
+    return inside;
+}
+
 // Handle click event on canvas to either select a hex or place a new one
 canvas.addEventListener("click", function (event) {
     if (isDragging) return; // Ignore clicks while dragging
@@ -106,10 +131,7 @@ canvas.addEventListener("click", function (event) {
     
     // Find if the click is on an existing hex
     const clickedHex = hexGrid.find(hex => {
-        const dx = x - (hex.x - offsetX);
-        const dy = y - (hex.y - offsetY);
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        return distance < hexSize;
+        return isPointInHexagon(x, y, hex.x, hex.y, hexSize);  // Use point-in-hexagon test
     });
     
     if (clickedHex) {
@@ -135,7 +157,6 @@ canvas.addEventListener("click", function (event) {
         }
     }
 });
-
 // Mouse down event to start dragging
 canvas.addEventListener("mousedown", function (event) {
     isDragging = true;
