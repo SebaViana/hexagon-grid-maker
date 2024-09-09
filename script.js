@@ -10,9 +10,9 @@ const hexSize = 40;
 let idCounter = 0; // To generate unique IDs
 let hexGrid = [];  // Store placed hexagons
 
-// Offset for panning
-let offsetX = 0;
-let offsetY = 0;
+// Initial offset for panning (to start at the center of the canvas)
+let offsetX = canvas.width / 2;
+let offsetY = canvas.height / 2;
 
 // Variables to track panning state
 let isDragging = false;
