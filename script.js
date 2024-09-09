@@ -25,11 +25,12 @@ function axialToPixel(q, r) {
     return { x, y };
 }
 
-// Draw a single hexagon
+// Draw a single pointy-topped hexagon
 function drawHexagon(x, y, size, id) {
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
-        const angle = Math.PI / 180 * (60 * i);
+        // Adjust the angle to rotate hexagons for pointy-top
+        const angle = Math.PI / 180 * (60 * i - 30);  // Subtract 30 degrees to rotate
         const x_i = x + size * Math.cos(angle);
         const y_i = y + size * Math.sin(angle);
         if (i === 0) ctx.moveTo(x_i, y_i);
@@ -42,6 +43,7 @@ function drawHexagon(x, y, size, id) {
     ctx.fillStyle = "#000";
     ctx.fillText(id, x - size / 3, y + size / 6);
 }
+
 
 // Place a new hexagon in the grid
 function placeHex(q, r) {
