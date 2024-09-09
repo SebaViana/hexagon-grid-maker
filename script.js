@@ -2,18 +2,26 @@ const canvas = document.getElementById("hexCanvas");
 const ctx = canvas.getContext("2d");
 
 // Set canvas size
-canvas.width = 1024;
-canvas.height = 720;
+canvas.width = 800;
+canvas.height = 600;
 
 // Hexagon size and grid dimensions
 const hexSize = 40;
 let idCounter = 0; // To generate unique IDs
 let hexGrid = [];  // Store placed hexagons
 
-// Axial to pixel coordinates conversion
+// Offset for panning
+let offsetX = 0;
+let offsetY = 0;
+
+// Variables to track panning state
+let isDragging = false;
+let startDragX, startDragY;
+
+// Axial to pixel coordinates conversion (with offset for panning)
 function axialToPixel(q, r) {
-    const x = hexSize * Math.sqrt(3) * (q + r / 2);
-    const y = hexSize * 3 / 2 * r;
+    const x = hexSize * Math.sqrt(3) * (q + r / 2) + offsetX;
+    const y = hexSize * 3 / 2 * r + offsetY;
     return { x, y };
 }
 
@@ -88,14 +96,16 @@ function displayNeighbors(hex) {
 
 // Handle click event on canvas to either select a hex or place a new one
 canvas.addEventListener("click", function (event) {
+    if (isDragging) return; // Ignore clicks while dragging
+
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
     // Find if the click is on an existing hex
     const clickedHex = hexGrid.find(hex => {
-        const dx = x - hex.x;
-        const dy = y - hex.y;
+        const dx = x - (hex.x - offsetX);
+        const dy = y - (hex.y - offsetY);
         const distance = Math.sqrt(dx * dx + dy * dy);
         return distance < hexSize;
     });
@@ -123,6 +133,36 @@ canvas.addEventListener("click", function (event) {
         }
     }
 });
+
+// Mouse down event to start dragging
+canvas.addEventListener("mousedown", function (event) {
+    isDragging = true;
+    startDragX = event.clientX - offsetX;
+    startDragY = event.clientY - offsetY;
+});
+
+// Mouse move event to handle dragging
+canvas.addEventListener("mousemove", function (event) {
+    if (isDragging) {
+        offsetX = event.clientX - startDragX;
+        offsetY = event.clientY - startDragY;
+        redrawHexes();  // Redraw all hexagons with new offsets
+    }
+});
+
+// Mouse up event to stop dragging
+canvas.addEventListener("mouseup", function () {
+    isDragging = false;
+});
+
+// Redraw all hexagons with updated offsets
+function redrawHexes() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+    hexGrid.forEach(hex => {
+        const { x, y } = axialToPixel(hex.q, hex.r);
+        drawHexagon(x, y, hexSize, hex.id);
+    });
+}
 
 // Start with a single hexagon in the center (q = 0, r = 0)
 placeHex(0, 0);
