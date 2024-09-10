@@ -7,7 +7,7 @@ canvas.height = 600;
 
 // Hexagon size and grid dimensions
 const hexSize = 40;
-let idCounter = 0; // To generate unique IDs
+let idCounter = 0; // Start ID counter from 0
 let hexGrid = [];  // Store placed hexagons
 
 // Initial offset for panning (to start at the center of the canvas)
@@ -45,8 +45,16 @@ function drawHexagon(x, y, size, id) {
 // Place a new hexagon in the grid
 function placeHex(q, r) {
     const { x, y } = axialToPixel(q, r);
-    const hex = { id: idCounter++, q: q, r: r, x: x, y: y };
+    
+    // Find a unique ID
+    let newId = idCounter;
+    while (hexGrid.some(hex => hex.id === newId)) {
+        newId++;
+    }
+    
+    const hex = { id: newId, q: q, r: r, x: x, y: y };
     hexGrid.push(hex); // Add the hex to the grid
+    idCounter = newId + 1; // Increment ID counter for the next hexagon
     drawHexagon(x, y, hexSize, hex.id);
     
     if (selectedHex) {
@@ -275,9 +283,15 @@ placeHex(0, 0);
 document.getElementById("hexId").addEventListener("keydown", function(event) {
     if (event.key === "Enter" && selectedHex) {
         const newId = this.value.trim();
-        if (newId && !isNaN(newId) && newId !== selectedHex.id.toString()) {
-            selectedHex.id = newId;
-            redrawHexes(); // Redraw to update hexagon ID display
+        if (newId && !isNaN(newId)) {
+            if (hexGrid.some(hex => hex.id === Number(newId) && hex.id !== selectedHex.id)) {
+                alert("ID already exists. Please choose a different ID.");
+            } else {
+                selectedHex.id = Number(newId);
+                redrawHexes(); // Redraw to update hexagon ID display
+            }
+        } else {
+            alert("Invalid ID. Please enter a numeric value.");
         }
         event.preventDefault(); // Prevent the default action (e.g., form submission)
     }
