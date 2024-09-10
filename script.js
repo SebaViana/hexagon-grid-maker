@@ -96,6 +96,8 @@ function displayNeighbors(hex) {
     });
 }
 
+let selectedHex = null; // Track the currently selected hexagon
+
 // Function to check if a point is inside a hexagon
 function isPointInHexagon(x, y, hexX, hexY, size) {
     const points = [];
@@ -121,6 +123,39 @@ function isPointInHexagon(x, y, hexX, hexY, size) {
     return inside;
 }
 
+// Place a new hexagon in the grid
+function placeHex(q, r) {
+    const { x, y } = axialToPixel(q, r);
+    const hex = { id: idCounter++, q: q, r: r, x: x, y: y };
+    hexGrid.push(hex); // Add the hex to the grid
+    drawHexagon(x, y, hexSize, hex.id);
+    
+    // After placing, update the information of the currently selected hex if it exists
+    if (selectedHex) {
+        displayNeighbors(selectedHex);
+    }
+}
+
+// Display selected hex and its movable neighbors (by ID)
+function displayNeighbors(hex) {
+    const neighborList = document.getElementById("neighborList");
+    neighborList.innerHTML = ''; // Clear old list
+    
+    const selectedLi = document.createElement("li");
+    selectedLi.textContent = `Selected Hex ID: ${hex.id}`;
+    neighborList.appendChild(selectedLi);
+
+    const neighbors = getNeighbors(hex.q, hex.r);
+    neighbors.forEach(neighbor => {
+        const existingHex = findHex(neighbor.q, neighbor.r);
+        if (existingHex) {
+            const li = document.createElement("li");
+            li.textContent = `Movable to Hex ID: ${existingHex.id}`;
+            neighborList.appendChild(li);
+        }
+    });
+}
+
 // Handle click event on canvas to either select a hex or place a new one
 canvas.addEventListener("click", function (event) {
     if (isDragging) return; // Ignore clicks while dragging
@@ -135,7 +170,8 @@ canvas.addEventListener("click", function (event) {
     });
     
     if (clickedHex) {
-        // If an existing hex is clicked, show its neighbors
+        // If an existing hex is clicked, set it as the selected hex and show its neighbors
+        selectedHex = clickedHex;
         displayNeighbors(clickedHex);
     } else {
         // Try to place a new hex if clicked in a valid neighboring position
@@ -157,6 +193,7 @@ canvas.addEventListener("click", function (event) {
         }
     }
 });
+
 // Mouse down event to start dragging
 canvas.addEventListener("mousedown", function (event) {
     isDragging = true;
