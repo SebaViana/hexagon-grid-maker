@@ -6,12 +6,17 @@ const sizeValue = document.getElementById('sizeValue');
 const imageUpload = document.getElementById('imageUpload');
 const imageScaleInput = document.getElementById('imageScale');
 const scaleValue = document.getElementById('scaleValue');
+const exportButton = document.getElementById('exportButton');
+const importFile = document.getElementById('importFile');
+const importButton = document.getElementById('importButton');
+const hexIdInput = document.getElementById('hexId');
 
 let hexSize = parseInt(hexSizeInput.value);
 let hexColor = hexColorInput.value;
 let imageScale = parseFloat(imageScaleInput.value);
 let image = new Image();
 let imageLoaded = false;
+let hexId = hexIdInput.value || null;
 
 // Convert axial coordinates to pixel coordinates
 function axialToPixel(q, r) {
@@ -83,6 +88,78 @@ imageUpload.addEventListener('change', function(event) {
     }
 });
 
+// Export hexagon data
+exportButton.addEventListener('click', function() {
+    const hexData = {
+        id: hexId,
+        hexSize: hexSize,
+        hexColor: hexColor,
+        imageScale: imageScale,
+        imageSrc: image.src
+    };
+    const json = JSON.stringify(hexData);
+    
+    // Convert canvas to image data
+    const canvasData = canvas.toDataURL();
+    
+    const exportData = {
+        hexData: hexData,
+        canvasData: canvasData
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'hexagon.json';
+    a.click();
+    URL.revokeObjectURL(url);
+});
+
+// Import hexagon data
+importButton.addEventListener('click', function() {
+    const file = importFile.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = JSON.parse(e.target.result);
+            const hexData = data.hexData;
+            const canvasData = data.canvasData;
+
+            // Update hexagon settings
+            hexId = hexData.id;
+            hexSize = hexData.hexSize;
+            hexColor = hexData.hexColor;
+            imageScale = hexData.imageScale;
+            
+            // Update UI controls
+            hexIdInput.value = hexId;
+            hexSizeInput.value = hexSize;
+            sizeValue.textContent = hexSize;
+            hexColorInput.value = hexColor;
+            imageScaleInput.value = imageScale;
+            scaleValue.textContent = imageScale;
+            
+            // Set image source
+            image.src = hexData.imageSrc;
+            image.onload = function() {
+                imageLoaded = true;
+                // Draw the imported image
+                const ctx2 = canvas.getContext('2d');
+                const img = new Image();
+                img.src = canvasData;
+                img.onload = function() {
+                    ctx2.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx2.drawImage(img, 0, 0);
+                    updateCanvas();
+                };
+            };
+        };
+        reader.readAsText(file);
+    }
+});
+
 // Event listeners for the controls
 hexSizeInput.addEventListener('input', function() {
     hexSize = parseInt(this.value);
@@ -99,6 +176,10 @@ imageScaleInput.addEventListener('input', function() {
     imageScale = parseFloat(this.value);
     scaleValue.textContent = imageScale;
     updateCanvas();
+});
+
+hexIdInput.addEventListener('input', function() {
+    hexId = this.value;
 });
 
 // Initial draw
