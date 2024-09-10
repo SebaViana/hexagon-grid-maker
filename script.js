@@ -322,3 +322,44 @@ document.getElementById("hexId").addEventListener("input", function() {
     }
 });
 
+let potentialHex = null; // Store potential hex for visual cue
+
+// Function to highlight a potential hexagon position
+function drawPotentialHex(q, r) {
+    const { x, y } = axialToPixel(q, r);
+    ctx.strokeStyle = 'rgba(0, 150, 0, 0.5)'; // Green outline with transparency
+    ctx.lineWidth = 2;
+    drawHexagon(x, y, hexSize, '');
+    ctx.strokeStyle = '#000'; // Reset stroke style
+    ctx.lineWidth = 1;
+}
+
+// Handle mouse move to show potential hexagon position
+canvas.addEventListener("mousemove", function(event) {
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    // Reset potential hex position
+    potentialHex = null;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    redrawHexes();
+
+    // Find possible position for a new hex
+    for (const hex of hexGrid) {
+        const neighbors = getNeighbors(hex.q, hex.r);
+        for (const neighbor of neighbors) {
+            if (!findHex(neighbor.q, neighbor.r)) {
+                const { x: neighborX, y: neighborY } = axialToPixel(neighbor.q, neighbor.r);
+                const dx = x - neighborX;
+                const dy = y - neighborY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < hexSize) {
+                    potentialHex = neighbor;
+                    drawPotentialHex(neighbor.q, neighbor.r); // Draw highlight
+                    return;
+                }
+            }
+        }
+    }
+});
