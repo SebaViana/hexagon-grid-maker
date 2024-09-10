@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Board RPG Game Configuration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        select, button {
+            margin-top: 5px;
+        }
+        #configOutput {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Board RPG Game Configuration</h1>
+
+    <form id="configForm">
+        <label for="map">What map is going to be used?</label>
+        <select id="map" name="map" required>
+            <option value="">Select a map</option>
+        </select>
+
+        <label for="players">What players are going to be used (order of turns)? (Hold Ctrl or Cmd to select multiple)</label>
+        <select id="players" name="players" multiple required>
+            <!-- Options will be populated via JavaScript -->
+        </select>
+
+        <button type="button" onclick="submitConfig()">Submit</button>
+    </form>
+
+    <div id="configOutput"></div>
+
+    <script>
+        // Fetch map and player data from the server when the page loads
+        window.onload = function() {
+            fetch('/api/maps') // Replace with your API endpoint for maps
+                .then(response => response.json())
+                .then(data => {
+                    const mapSelect = document.getElementById('map');
+                    data.maps.forEach(map => {
+                        const option = document.createElement('option');
+                        option.value = map.id;
+                        option.textContent = map.name;
+                        mapSelect.appendChild(option);
+                    });
+                });
+
+            fetch('/api/players') // Replace with your API endpoint for players
+                .then(response => response.json())
+                .then(data => {
+                    const playersSelect = document.getElementById('players');
+                    data.players.forEach(player => {
+                        const option = document.createElement('option');
+                        option.value = player.id;
+                        option.textContent = player.name;
+                        playersSelect.appendChild(option);
+                    });
+                });
+        };
+
+        function submitConfig() {
+            const mapSelect = document.getElementById('map');
+            const selectedMap = mapSelect.options[mapSelect.selectedIndex].text;
+
+            const playersSelect = document.getElementById('players');
+            const selectedPlayers = Array.from(playersSelect.selectedOptions)
+                .map(option => option.text)
+                .filter(name => name);
+
+            if (selectedMap && selectedPlayers.length > 0) {
+                const outputDiv = document.getElementById('configOutput');
+                outputDiv.innerHTML = `
+                    <h2>Configuration Summary</h2>
+                    <p><strong>Map:</strong> ${selectedMap}</p>
+                    <p><strong>Players:</strong></p>
+                    <ul>
+                        ${selectedPlayers.map(player => `<li>${player}</li>`).join('')}
+                    </ul>
+                `;
+            } else {
+                alert('Please fill in all fields correctly.');
+            }
+        }
+    </script>
+</body>
+</html>
