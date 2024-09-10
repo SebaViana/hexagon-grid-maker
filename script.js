@@ -20,7 +20,7 @@ let startDragX, startDragY;
 
 // Axial to pixel coordinates conversion (with offset for staggered rows)
 function axialToPixel(q, r) {
-    const x = hexSize * Math.sqrt(3) * q + (r % 2 === 0 ? 0 : hexSize * Math.sqrt(3) / 2) + offsetX;
+    const x = hexSize * Math.sqrt(3) * (q + r / 2) + offsetX;
     const y = hexSize * 3 / 2 * r + offsetY;
     return { x, y };
 }
@@ -45,8 +45,8 @@ function drawHexagon(x, y, size, id) {
 // Place a new hexagon in the grid
 function placeHex(q, r) {
     const { x, y } = axialToPixel(q, r);
-    
-    // Find a unique ID
+
+    // Ensure that the new hex ID is unique
     let newId = idCounter;
     while (hexGrid.some(hex => hex.id === newId)) {
         newId++;
@@ -55,7 +55,7 @@ function placeHex(q, r) {
     const hex = { id: newId, q: q, r: r, x: x, y: y };
     hexGrid.push(hex); // Add the hex to the grid
     idCounter = newId + 1; // Increment ID counter for the next hexagon
-    drawHexagon(x, y, hexSize, hex.id);
+    redrawHexes(); // Redraw all hexes after placing a new one
     
     if (selectedHex) {
         displayNeighbors(selectedHex);
@@ -159,10 +159,10 @@ canvas.addEventListener("click", function (event) {
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    
-    // Find if the click is on an existing hex
+
+    // Check if the click is on an existing hexagon
     const clickedHex = hexGrid.find(hex => {
-        return isPointInHexagon(x, y, hex.x, hex.y, hexSize);  // Use point-in-hexagon test
+        return isPointInHexagon(x, y, hex.x, hex.y, hexSize); // Use point-in-hexagon test
     });
     
     if (clickedHex) {
@@ -170,7 +170,7 @@ canvas.addEventListener("click", function (event) {
         displayNeighbors(clickedHex);
         displayBorderingHexagons(clickedHex);
     } else {
-        // Try to place a new hex if clicked in a valid neighboring position
+        // Check for valid position to place a new hex
         for (const hex of hexGrid) {
             const neighbors = getNeighbors(hex.q, hex.r);
             for (const neighbor of neighbors) {
@@ -188,6 +188,7 @@ canvas.addEventListener("click", function (event) {
         }
     }
 });
+
 
 // Function to generate export data
 function generateExportData() {
