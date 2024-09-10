@@ -1,19 +1,25 @@
 const express = require('express');
 const { Pool } = require('pg');
 const multer = require('multer');
-const path = require('path');
+const cors = require('cors');  // Import CORS
+
+// Initialize Express app
+const app = express();
+app.use(cors());  // Enable CORS
+
+app.use(cors({
+  origin: 'http://localhost'
+}));
 
 // Setup PostgreSQL connection pool
 const pool = new Pool({
   user: 'user',
-  host: 'localhost',
+  host: 'postgres',  // Use Docker service name
   database: 'character_db',
   password: 'password',
   port: 5432,
 });
 
-// Initialize Express app
-const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

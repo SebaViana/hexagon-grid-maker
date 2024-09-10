@@ -1,34 +1,43 @@
 version: '3.8'
 
 services:
-  db:
+  postgres:
     image: postgres:latest
-    container_name: postgres_db
+    container_name: postgres
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: character_db
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - my-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d character_db"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
 
   backend:
     build: ./character-creator/backend
-    container_name: backend_service
+    container_name: backend  
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "3000:3000"
-    depends_on:
-      - db
+    networks:
+      - my-network
 
   frontend:
     build: ./character-creator/frontend
-    container_name: frontend_service
+    container_name: frontend
     ports:
       - "80:80"
-    depends_on:
-      - backend
+    networks:
+      - my-network
 
-volumes:
-  postgres_data:
+networks:
+  my-network:
 
