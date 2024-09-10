@@ -18,9 +18,9 @@ let offsetY = canvas.height / 2;
 let isDragging = false;
 let startDragX, startDragY;
 
-// Axial to pixel coordinates conversion (with offset for panning)
+// Axial to pixel coordinates conversion (with offset for staggered rows)
 function axialToPixel(q, r) {
-    const x = hexSize * Math.sqrt(3) * (q + r / 2) + offsetX;
+    const x = hexSize * Math.sqrt(3) * q + (r % 2 === 0 ? 0 : hexSize * Math.sqrt(3) / 2) + offsetX;
     const y = hexSize * 3 / 2 * r + offsetY;
     return { x, y };
 }
@@ -29,7 +29,6 @@ function axialToPixel(q, r) {
 function drawHexagon(x, y, size, id) {
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
-        // Adjust the angle to rotate hexagons for pointy-top
         const angle = Math.PI / 180 * (60 * i - 30);  // Subtract 30 degrees to rotate
         const x_i = x + size * Math.cos(angle);
         const y_i = y + size * Math.sin(angle);
@@ -39,11 +38,9 @@ function drawHexagon(x, y, size, id) {
     ctx.closePath();
     ctx.stroke();
     
-    // Add ID to the center of the hexagon
     ctx.fillStyle = "#000";
     ctx.fillText(id, x - size / 3, y + size / 6);
 }
-
 
 // Place a new hexagon in the grid
 function placeHex(q, r) {
@@ -51,6 +48,11 @@ function placeHex(q, r) {
     const hex = { id: idCounter++, q: q, r: r, x: x, y: y };
     hexGrid.push(hex); // Add the hex to the grid
     drawHexagon(x, y, hexSize, hex.id);
+    
+    if (selectedHex) {
+        displayNeighbors(selectedHex);
+        displayBorderingHexagons(selectedHex);
+    }
 }
 
 // Get neighbors of a hex by axial coordinates
@@ -76,28 +78,6 @@ function findHex(q, r) {
     return hexGrid.find(hex => hex.q === q && hex.r === r);
 }
 
-// Display selected hex and its movable neighbors (by ID)
-function displayNeighbors(hex) {
-    const neighborList = document.getElementById("neighborList");
-    neighborList.innerHTML = ''; // Clear old list
-    
-    const selectedLi = document.createElement("li");
-    selectedLi.textContent = `Selected Hex ID: ${hex.id}`;
-    neighborList.appendChild(selectedLi);
-
-    const neighbors = getNeighbors(hex.q, hex.r);
-    neighbors.forEach(neighbor => {
-        const existingHex = findHex(neighbor.q, neighbor.r);
-        if (existingHex) {
-            const li = document.createElement("li");
-            li.textContent = `Movable to Hex ID: ${existingHex.id}`;
-            neighborList.appendChild(li);
-        }
-    });
-}
-
-let selectedHex = null; // Track the currently selected hexagon
-
 // Function to check if a point is inside a hexagon
 function isPointInHexagon(x, y, hexX, hexY, size) {
     const points = [];
@@ -109,7 +89,6 @@ function isPointInHexagon(x, y, hexX, hexY, size) {
         });
     }
 
-    // Check if the point (x, y) is inside the polygon formed by the hexagon's vertices
     let inside = false;
     for (let i = 0, j = 5; i < 6; j = i++) {
         const xi = points[i].x, yi = points[i].y;
@@ -123,19 +102,6 @@ function isPointInHexagon(x, y, hexX, hexY, size) {
     return inside;
 }
 
-// Place a new hexagon in the grid
-function placeHex(q, r) {
-    const { x, y } = axialToPixel(q, r);
-    const hex = { id: idCounter++, q: q, r: r, x: x, y: y };
-    hexGrid.push(hex); // Add the hex to the grid
-    drawHexagon(x, y, hexSize, hex.id);
-    
-    // After placing, update the information of the currently selected hex if it exists
-    if (selectedHex) {
-        displayNeighbors(selectedHex);
-    }
-}
-
 // Display selected hex and its movable neighbors (by ID)
 function displayNeighbors(hex) {
     const neighborList = document.getElementById("neighborList");
@@ -155,6 +121,28 @@ function displayNeighbors(hex) {
         }
     });
 }
+
+// Display bordering hexagons of the selected hexagon
+function displayBorderingHexagons(hex) {
+    const borderingHexList = document.getElementById("borderingHexList");
+    borderingHexList.innerHTML = ''; // Clear old list
+    
+    const neighbors = getNeighbors(hex.q, hex.r);
+    neighbors.forEach(neighbor => {
+        const existingHex = findHex(neighbor.q, neighbor.r);
+        if (existingHex) {
+            const li = document.createElement("li");
+            li.textContent = `Bordering Hex ID: ${existingHex.id}`;
+            borderingHexList.appendChild(li);
+        }
+    });
+    
+    // Update the editable ID field
+    const hexIdField = document.getElementById("hexId");
+    hexIdField.value = hex.id; // Set the ID of the selected hexagon
+}
+
+let selectedHex = null; // Track the currently selected hexagon
 
 // Handle click event on canvas to either select a hex or place a new one
 canvas.addEventListener("click", function (event) {
@@ -170,15 +158,14 @@ canvas.addEventListener("click", function (event) {
     });
     
     if (clickedHex) {
-        // If an existing hex is clicked, set it as the selected hex and show its neighbors
         selectedHex = clickedHex;
         displayNeighbors(clickedHex);
+        displayBorderingHexagons(clickedHex);
     } else {
         // Try to place a new hex if clicked in a valid neighboring position
         for (const hex of hexGrid) {
             const neighbors = getNeighbors(hex.q, hex.r);
             for (const neighbor of neighbors) {
-                // Check if the neighbor position is empty and the click is within range
                 if (!findHex(neighbor.q, neighbor.r)) {
                     const { x: neighborX, y: neighborY } = axialToPixel(neighbor.q, neighbor.r);
                     const dx = x - neighborX;
@@ -193,39 +180,6 @@ canvas.addEventListener("click", function (event) {
         }
     }
 });
-
-// Mouse down event to start dragging
-canvas.addEventListener("mousedown", function (event) {
-    isDragging = true;
-    startDragX = event.clientX - offsetX;
-    startDragY = event.clientY - offsetY;
-});
-
-// Mouse move event to handle dragging
-canvas.addEventListener("mousemove", function (event) {
-    if (isDragging) {
-        offsetX = event.clientX - startDragX;
-        offsetY = event.clientY - startDragY;
-        redrawHexes();  // Redraw all hexagons with new offsets
-    }
-});
-
-// Mouse up event to stop dragging
-canvas.addEventListener("mouseup", function () {
-    isDragging = false;
-});
-
-// Redraw all hexagons with updated offsets
-function redrawHexes() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
-    hexGrid.forEach(hex => {
-        const { x, y } = axialToPixel(hex.q, hex.r);
-        drawHexagon(x, y, hexSize, hex.id);
-    });
-}
-
-// Start with a single hexagon in the center (q = 0, r = 0)
-placeHex(0, 0);
 
 // Function to generate export data
 function generateExportData() {
@@ -262,3 +216,77 @@ function downloadExportData() {
 
 // Add event listener to the export button
 document.getElementById("exportButton").addEventListener("click", downloadExportData);
+
+// Handle canvas panning
+canvas.addEventListener("mousedown", function(event) {
+    if (!selectedHex) return; // Ignore dragging if no hex is selected
+
+    isDragging = true;
+    startDragX = event.clientX;
+    startDragY = event.clientY;
+});
+
+canvas.addEventListener("mousemove", function(event) {
+    if (!isDragging) return;
+
+    const dx = event.clientX - startDragX;
+    const dy = event.clientY - startDragY;
+
+    offsetX += dx;
+    offsetY += dy;
+
+    startDragX = event.clientX;
+    startDragY = event.clientY;
+
+    redrawHexes();
+});
+
+canvas.addEventListener("mouseup", function() {
+    isDragging = false;
+});
+
+// Redraw all hexes after panning
+function redrawHexes() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hexGrid.forEach(hex => {
+        const { x, y } = axialToPixel(hex.q, hex.r);
+        drawHexagon(x, y, hexSize, hex.id);
+    });
+
+    if (selectedHex) {
+        displayNeighbors(selectedHex);
+        displayBorderingHexagons(selectedHex);
+    }
+}
+
+// Redraw on canvas resize
+window.addEventListener('resize', function() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    offsetX = canvas.width / 2;
+    offsetY = canvas.height / 2;
+    redrawHexes();
+});
+
+// Initialize the canvas with a single hexagon
+placeHex(0, 0);
+
+// Handle changes in the editable ID field on Enter key press
+document.getElementById("hexId").addEventListener("keydown", function(event) {
+    if (event.key === "Enter" && selectedHex) {
+        const newId = this.value.trim();
+        if (newId && !isNaN(newId) && newId !== selectedHex.id.toString()) {
+            selectedHex.id = newId;
+            redrawHexes(); // Redraw to update hexagon ID display
+        }
+        event.preventDefault(); // Prevent the default action (e.g., form submission)
+    }
+});
+
+// Validate input to allow only numeric values
+document.getElementById("hexId").addEventListener("input", function() {
+    const value = this.value;
+    if (!/^\d*$/.test(value)) {
+        this.value = value.replace(/\D/g, ''); // Remove non-numeric characters
+    }
+});

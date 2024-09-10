@@ -10,11 +10,17 @@
     <h1>Hexagonal Grid RPG Movement</h1>
     <canvas id="hexCanvas"></canvas>
     <div id="output">
-        <h2>Selected Hex and Movable Hexes:</h2>
+        <h2>Selected Hexagon:</h2>
+        <label for="hexId">Hex ID:</label>
+        <input type="text" id="hexId">
+        <h2>Bordering Hexagons:</h2>
+        <ul id="borderingHexList"></ul>
+        <h2>Movable Hexagons:</h2>
         <ul id="neighborList"></ul>
-        <button id="exportButton">Export Data</button>
     </div>
 
+    <button id="exportButton">Export Data</button>
+    
     <script src="script.js"></script>
 </body>
 </html>
