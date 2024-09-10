@@ -226,3 +226,39 @@ function redrawHexes() {
 
 // Start with a single hexagon in the center (q = 0, r = 0)
 placeHex(0, 0);
+
+// Function to generate export data
+function generateExportData() {
+    const exportData = {};
+    
+    hexGrid.forEach(hex => {
+        const neighbors = getNeighbors(hex.q, hex.r);
+        const movableNeighbors = neighbors.map(neighbor => {
+            const existingHex = findHex(neighbor.q, neighbor.r);
+            return existingHex ? existingHex.id : null;
+        }).filter(id => id !== null); // Remove nulls
+        
+        exportData[hex.id] = movableNeighbors;
+    });
+    
+    return exportData;
+}
+
+// Function to download the data as a JSON file
+function downloadExportData() {
+    const data = generateExportData();
+    const dataStr = JSON.stringify(data, null, 2); // Pretty-print JSON
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "hexagon_data.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Add event listener to the export button
+document.getElementById("exportButton").addEventListener("click", downloadExportData);
