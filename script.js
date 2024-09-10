@@ -225,6 +225,23 @@ function downloadExportData() {
 // Add event listener to the export button
 document.getElementById("exportButton").addEventListener("click", downloadExportData);
 
+// Add event listener to the delete button
+document.getElementById("deleteButton").addEventListener("click", function() {
+    if (selectedHex) {
+        const confirmation = confirm(`Are you sure you want to delete hexagon with ID ${selectedHex.id}?`);
+        if (confirmation) {
+            hexGrid = hexGrid.filter(hex => hex.id !== selectedHex.id); // Remove hexagon from grid
+            redrawHexes(); // Redraw hexes without the deleted one
+            selectedHex = null; // Clear the selected hex
+            document.getElementById("neighborList").innerHTML = ''; // Clear neighbor list
+            document.getElementById("borderingHexList").innerHTML = ''; // Clear bordering list
+            document.getElementById("hexId").value = ''; // Clear ID field
+        }
+    } else {
+        alert("No hexagon is selected for deletion.");
+    }
+});
+
 // Handle canvas panning
 canvas.addEventListener("mousedown", function(event) {
     if (!selectedHex) return; // Ignore dragging if no hex is selected
@@ -304,3 +321,4 @@ document.getElementById("hexId").addEventListener("input", function() {
         this.value = value.replace(/\D/g, ''); // Remove non-numeric characters
     }
 });
+
