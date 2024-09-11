@@ -1,20 +1,20 @@
 const express = require('express');
 const { Pool } = require('pg');
 const multer = require('multer');
-const cors = require('cors');  // Import CORS
+const cors = require('cors');
 
 // Initialize Express app
 const app = express();
-app.use(cors());  // Enable CORS
 
+// Enable CORS
 app.use(cors({
-  origin: 'http://localhost'
+  origin: 'http://localhost'  // Adjust if needed
 }));
 
 // Setup PostgreSQL connection pool
 const pool = new Pool({
   user: 'user',
-  host: 'postgres',  // Use Docker service name
+  host: 'postgres',  // Docker service name
   database: 'character_db',
   password: 'password',
   port: 5432,
@@ -33,7 +33,7 @@ pool.query(`
     id SERIAL PRIMARY KEY,
     name VARCHAR(100),
     race VARCHAR(50),
-    class VARCHAR(50),
+    character_class VARCHAR(50),
     strength INTEGER,
     dexterity INTEGER,
     intelligence INTEGER,
@@ -48,11 +48,14 @@ pool.query(`
 });
 
 // Endpoint to save character data
-app.post('/characters', upload.single('image'), async (req, res) => {
+app.post('/api/personajes', upload.single('image'), async (req, res) => {
+  console.log('Request Body:', req.body);  // Debug log
+  console.log('Uploaded File:', req.file);  // Debug log
+
   const {
     name,
     race,
-    class: characterClass,
+    character_class,
     strength,
     dexterity,
     intelligence,
@@ -63,9 +66,9 @@ app.post('/characters', upload.single('image'), async (req, res) => {
 
   try {
     await pool.query(`
-      INSERT INTO characters (name, race, class, strength, dexterity, intelligence, luck, health, image)
+      INSERT INTO characters (name, race, character_class, strength, dexterity, intelligence, luck, health, image)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-    `, [name, race, characterClass, strength, dexterity, intelligence, luck, health, image]);
+    `, [name, race, character_class, strength, dexterity, intelligence, luck, health, image]);
 
     res.status(201).json({ message: 'Character created successfully' });
   } catch (err) {

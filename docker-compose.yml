@@ -21,12 +21,12 @@ services:
 
   backend:
     build: ./character-creator/backend
-    container_name: backend  
+    container_name: backend
     depends_on:
       postgres:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      - "3000:3000"  # Expose port 3000 of the backend container to port 3000 on the host
     networks:
       - my-network
 
