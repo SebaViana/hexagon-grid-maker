@@ -35,6 +35,7 @@ const CharacterForm = () => {
   const [intelligence, setIntelligence] = useState(1);
   const [luck, setLuck] = useState(1);
   const [image, setImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null); // To track the file itself
   const [editMode, setEditMode] = useState(false);
 
   const { getRootProps, getInputProps } = useDropzone({
@@ -48,7 +49,8 @@ const CharacterForm = () => {
       try {
         const isValidDimensions = await checkImageDimensions(file);
         if (isValidDimensions) {
-          setImage(file); // Save the file itself
+          setImage(URL.createObjectURL(file)); // Display the image
+          setImageFile(file); // Save the file itself for upload
         } else {
           alert('The image must be 300x400 pixels');
         }
@@ -98,8 +100,9 @@ const CharacterForm = () => {
     formData.append('intelligence', intelligence);
     formData.append('luck', luck);
     formData.append('health', 100);
-    if (image && image instanceof File) {
-      formData.append('image', image);
+
+    if (imageFile) {
+      formData.append('image', imageFile);
     }
 
     try {
@@ -207,7 +210,7 @@ const CharacterForm = () => {
           <label>Image:</label>
           <div {...getRootProps()} style={{ border: '1px solid #ccc', padding: '10px', cursor: 'pointer' }}>
             <input {...getInputProps()} />
-            {image && !(image instanceof File) ? (
+            {image ? (
               <img src={image} alt="Character" style={{ width: '300px', height: '400px' }} />
             ) : (
               'Drag and drop an image here or click to select'
