@@ -26,9 +26,16 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "3000:3000"  # Expose port 3000 of the backend container to port 3000 on the host
+      - "3000:3000"
     networks:
       - my-network
+    environment:
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: character_db
+      DB_HOST: postgres
+      DB_PORT: 5432
+      PORT: 3000
 
   frontend:
     build: ./character-creator/frontend

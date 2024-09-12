@@ -1,7 +1,9 @@
 const express = require('express');
+const path = require('path');
 const { Pool } = require('pg');
 const multer = require('multer');
 const cors = require('cors');
+const fs = require('fs');
 
 // Initialize Express app
 const app = express();
@@ -11,21 +13,39 @@ app.use(cors({
   origin: 'http://localhost'  // Adjust if needed
 }));
 
-// Setup PostgreSQL connection pool
+// Setup PostgreSQL connection pool using environment variables
 const pool = new Pool({
-  user: 'user',
-  host: 'postgres',  // Docker service name
-  database: 'character_db',
-  password: 'password',
-  port: 5432,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: parseInt(process.env.DB_PORT, 10),
 });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Define uploads directory
+const uploadsDir = path.join(__dirname, 'uploads');
+
+// Ensure uploads directory exists
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
+
 // Configure multer for file upload
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.originalname); // Use original file name
+  }
+});
 const upload = multer({ storage });
+
+// Serve static files from 'uploads' directory
+app.use('/uploads', express.static(uploadsDir));
 
 // Create characters table if not exists
 pool.query(`
@@ -39,7 +59,7 @@ pool.query(`
     intelligence INTEGER,
     luck INTEGER,
     health INTEGER,
-    image BYTEA
+    image VARCHAR
   );
 `, (err) => {
   if (err) {
@@ -62,7 +82,7 @@ app.post('/api/personajes', upload.single('image'), async (req, res) => {
     luck,
     health
   } = req.body;
-  const image = req.file ? req.file.buffer : null;
+  const image = req.file ? req.file.filename : null; // Save filename
 
   try {
     await pool.query(`
@@ -95,7 +115,6 @@ app.get('/api/personajes/:id', async (req, res) => {
   }
 });
 
-
 // Endpoint to update character data (UPDATE)
 app.put('/api/personajes/:id', upload.single('image'), async (req, res) => {
   const { id } = req.params;
@@ -109,7 +128,7 @@ app.put('/api/personajes/:id', upload.single('image'), async (req, res) => {
     luck,
     health
   } = req.body;
-  const image = req.file ? req.file.buffer : null;
+  const image = req.file ? req.file.filename : null;
 
   try {
     // Update the character with the given ID
@@ -160,7 +179,6 @@ app.delete('/api/personajes/:id', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
 
 // Start the server
 const PORT = process.env.PORT || 3000;

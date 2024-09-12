@@ -1,10 +1,9 @@
-// CharacterForm.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 
-const API_URL = 'http://localhost:3000/api/personajes';
+const API_URL = 'http://localhost:3000/api/personajes'; // Keeping localhost
 
 const checkImageDimensions = (file) => {
   return new Promise((resolve, reject) => {
@@ -39,14 +38,17 @@ const CharacterForm = () => {
   const [editMode, setEditMode] = useState(false);
 
   const { getRootProps, getInputProps } = useDropzone({
-    accept: 'image/jpeg, image/png',
+    accept: {
+      'image/jpeg': ['.jpeg', '.jpg'],
+      'image/png': ['.png'],
+    },
     maxSize: 500000, // 500 KB
     onDrop: async (acceptedFiles) => {
       const file = acceptedFiles[0];
       try {
         const isValidDimensions = await checkImageDimensions(file);
         if (isValidDimensions) {
-          setImage(URL.createObjectURL(file));
+          setImage(file); // Save the file itself
         } else {
           alert('The image must be 300x400 pixels');
         }
@@ -69,7 +71,12 @@ const CharacterForm = () => {
           setDexterity(character.dexterity);
           setIntelligence(character.intelligence);
           setLuck(character.luck);
-          setImage(character.image ? URL.createObjectURL(new Blob([character.image])) : null);
+          // Handle image URL
+          if (character.image) {
+            setImage(`${API_URL.replace('/api/personajes', '')}/uploads/${character.image}`);
+          } else {
+            setImage(null);
+          }
           setEditMode(true);
         })
         .catch((error) => {
@@ -91,7 +98,7 @@ const CharacterForm = () => {
     formData.append('intelligence', intelligence);
     formData.append('luck', luck);
     formData.append('health', 100);
-    if (image) {
+    if (image && image instanceof File) {
       formData.append('image', image);
     }
 
@@ -117,8 +124,8 @@ const CharacterForm = () => {
     }
   };
 
-  const handleBack = () => {
-    navigate(-1); // Go back to the previous page
+  const handleBackClick = () => {
+    navigate('/');
   };
 
   return (
@@ -141,7 +148,6 @@ const CharacterForm = () => {
             <option value="human">Human</option>
             <option value="elf">Elf</option>
             <option value="dwarf">Dwarf</option>
-            {/* Add more options as needed */}
           </select>
         </div>
         <div>
@@ -151,7 +157,6 @@ const CharacterForm = () => {
             <option value="warrior">Warrior</option>
             <option value="mage">Mage</option>
             <option value="archer">Archer</option>
-            {/* Add more options as needed */}
           </select>
         </div>
         <div>
@@ -202,13 +207,15 @@ const CharacterForm = () => {
           <label>Image:</label>
           <div {...getRootProps()} style={{ border: '1px solid #ccc', padding: '10px', cursor: 'pointer' }}>
             <input {...getInputProps()} />
-            {image ? <img src={image} alt="Character" style={{ width: '300px', height: '400px' }} /> : 'Drag and drop an image here or click to select'}
+            {image && !(image instanceof File) ? (
+              <img src={image} alt="Character" style={{ width: '300px', height: '400px' }} />
+            ) : (
+              'Drag and drop an image here or click to select'
+            )}
           </div>
         </div>
         <button type="submit">{editMode ? 'Update Character' : 'Create Character'}</button>
-        <button type="button" onClick={handleBack} style={{ marginLeft: '10px' }}>
-          Back
-        </button>
+        <button type="button" onClick={handleBackClick}>Back</button>
       </form>
     </div>
   );
