@@ -117,12 +117,14 @@ const CharacterForm = () => {
     }
   };
 
+  const handleBack = () => {
+    navigate(-1); // Go back to the previous page
+  };
+
   return (
     <div>
       <h1>{editMode ? 'Edit Character' : 'Create Character'}</h1>
       <form onSubmit={handleSubmit}>
-        {/* Form fields similar to your previous implementation */}
-        {/* Include name, race, class, attributes, and image upload */}
         <div>
           <label>Character Name:</label>
           <input
@@ -204,6 +206,9 @@ const CharacterForm = () => {
           </div>
         </div>
         <button type="submit">{editMode ? 'Update Character' : 'Create Character'}</button>
+        <button type="button" onClick={handleBack} style={{ marginLeft: '10px' }}>
+          Back
+        </button>
       </form>
     </div>
   );

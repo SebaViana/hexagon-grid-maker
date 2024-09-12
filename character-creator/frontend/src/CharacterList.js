@@ -22,13 +22,16 @@ const CharacterList = () => {
   }, []);
 
   const handleDelete = async (id) => {
-    try {
-      await axios.delete(`${API_URL}/${id}`);
-      setCharacters(characters.filter(character => character.id !== id));
-      alert('Character deleted successfully');
-    } catch (error) {
-      console.error('Error deleting character', error);
-      alert('Error deleting character');
+    // Confirm the delete action
+    if (window.confirm('Are you sure you want to delete this character?')) {
+      try {
+        await axios.delete(`${API_URL}/${id}`);
+        setCharacters(characters.filter(character => character.id !== id));
+        alert('Character deleted successfully');
+      } catch (error) {
+        console.error('Error deleting character', error);
+        alert('Error deleting character');
+      }
     }
   };
 
@@ -38,8 +41,11 @@ const CharacterList = () => {
       <ul>
         {characters.map(character => (
           <li key={character.id}>
-            <Link to={`/edit/${character.id}`}>{character.name}</Link>
+            <p>{character.name}</p>
             <button onClick={() => handleDelete(character.id)}>Delete</button>
+            <Link to={`/edit/${character.id}`}>
+              <button>Edit</button>
+            </Link>
           </li>
         ))}
       </ul>
